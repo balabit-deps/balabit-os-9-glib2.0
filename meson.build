@@ -1,5 +1,5 @@
-project('glib', 'c', 'cpp',
-  version : '2.72.1',
+project('glib', 'c',
+  version : '2.72.4',
   # NOTE: We keep this pinned at 0.52 because that's what Debian Stable ships
   meson_version : '>= 0.52.0',
   default_options : [
@@ -10,7 +10,14 @@ project('glib', 'c', 'cpp',
 )
 
 cc = meson.get_compiler('c')
-cxx = meson.get_compiler('cpp')
+if meson.version().version_compare('>= 0.54.0')
+  have_cxx = add_languages('cpp', native: false, required: get_option('oss_fuzz').enabled())
+else
+  have_cxx = add_languages('cpp', required: get_option('oss_fuzz').enabled())
+endif
+if have_cxx
+  cxx = meson.get_compiler('cpp')
+endif
 
 cc_can_run = not meson.is_cross_build() or meson.has_exe_wrapper()
 
@@ -495,7 +502,9 @@ else
 endif
 
 add_project_arguments(cc.get_supported_arguments(warning_c_args), language: 'c')
-add_project_arguments(cxx.get_supported_arguments(warning_cxx_args), language: 'cpp')
+if have_cxx
+  add_project_arguments(cxx.get_supported_arguments(warning_cxx_args), language: 'cpp')
+endif
 
 # FIXME: We cannot build some of the GResource tests with -z nodelete, which
 # means we cannot use that flag in add_project_link_arguments(), and must add
@@ -1709,7 +1718,7 @@ va_list_val_copy_prog = '''
 
 if cc_can_run
   rres = cc.run(va_list_val_copy_prog, name : 'va_lists can be copied as values')
-  glib_va_val_copy = rres.returncode() == 0
+  glib_va_val_copy = rres.compiled() and rres.returncode() == 0
 else
   glib_va_val_copy = meson.get_cross_property('va_val_copy', true)
 endif
@@ -1734,18 +1743,20 @@ if g_have_iso_c_varargs
 #endif''')
 endif
 
-g_have_iso_cxx_varargs = cxx.compiles('''
-  void some_func (void) {
-    int a(int p1, int p2, int p3);
-    #define call_a(...) a(1,__VA_ARGS__)
-    call_a(2,3);
-  }''', name : 'ISO C99 varargs macros in C++')
+if have_cxx
+  g_have_iso_cxx_varargs = cxx.compiles('''
+    void some_func (void) {
+      int a(int p1, int p2, int p3);
+      #define call_a(...) a(1,__VA_ARGS__)
+      call_a(2,3);
+    }''', name : 'ISO C99 varargs macros in C++')
 
-if g_have_iso_cxx_varargs
-  glibconfig_conf.set('g_have_iso_cxx_varargs', '''
-#ifdef __cplusplus
-# define G_HAVE_ISO_VARARGS 1
-#endif''')
+  if g_have_iso_cxx_varargs
+    glibconfig_conf.set('g_have_iso_cxx_varargs', '''
+  #ifdef __cplusplus
+  # define G_HAVE_ISO_VARARGS 1
+  #endif''')
+  endif
 endif
 
 g_have_gnuc_varargs = cc.compiles('''
@@ -1988,7 +1999,7 @@ stack_grows_check_prog = '''
 
 if cc_can_run
   rres = cc.run(stack_grows_check_prog, name : 'stack grows check')
-  growing_stack = rres.returncode() == 0
+  growing_stack = rres.compiled() and rres.returncode() == 0
 else
   growing_stack = meson.get_cross_property('growing_stack', false)
 endif

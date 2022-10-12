@@ -1,3 +1,64 @@
+Overview of changes in GLib 2.72.4
+==================================
+
+* Bugs fixed:
+ - #2634 g_cond_wait_until: returning FALSE immediately on mips24 (Philip
+   Withnall)
+ - #2687 Regression: in GLib 2.72.3, in gsocketclient/cancellable (Philip
+   Withnall)
+ - #2719 GParamSpec constructors should have nullable annotation on nick/blurb
+   (Andy Holmes)
+ - #2733 gio: GVariantBuilder builder leaked in g_document_portal_add_documents
+   when URI list is empty (Sebastian Keller)
+ - !2810 Backport !2808 “gsocketclient: Fix passing NULL to
+   g_task_get_cancellable()” to glib-2-72
+
+* Translation updates:
+ - Czech (Marek Černocký)
+ - Georgian (Zurab Kargareteli)
+ - Hungarian (Balázs Úr)
+ - Serbian (Мирослав Николић)
+ - Spanish (Daniel Mustieles)
+
+Overview of changes in GLib 2.72.3
+==================================
+
+* Bugs fixed:
+ - #1941 disposing a non-cancelled inotify GFileMonitor causes deadlocks
+ - #2597 Crash in g_socket_client_enumerator_callback when proxy resolving
+ - #2639 xdgmime update breaks webkit2gtk file:// requests
+ - #2670 Growing memory when using cancellable in g_socket_client_connect_async
+ - !2703 glocalfilemonitor: Avoid file monitor destruction from event thread
+ - !2709 Backport !2707 “credentials: macos: check for existence of LOCAL_PEERPID” to glib-2-72
+ - !2720 Backport !2708 “xdgmime: Fix broken file:// content type lookups for webkitgtk” to glib-2-72
+ - !2750 Backport !2745 “gsocketclient: Fix still-reachable references to cancellables” to glib-2-72
+ - !2787 Backport !2742 “proxyaddressenumerator: set error parameter more thoughtfully” to glib-2-72
+
+
+Overview of changes in GLib 2.72.2
+==================================
+
+* Bugs fixed:
+ - #2640 UWP warnings about extensions and verbs with glib 2.72.1
+ - !2605 Backport !2449 and !2600 mingw test fixes to glib-2-72
+ - !2616 Backport !2615 “Meson: Fix gio-windows-2.0 override name” to glib-2-72
+ - !2629 Backport !2626, !2627 minor leak fixes to glib-2-72
+ - !2643 Backport !2642 “meson: Check rres.compiled() before calling rres.returncode()” to glib-2-72
+ - !2644 Backport !2631 “Cast to guintptr instead of subtracting by null” to glib-2-72
+ - !2662 Backport !2654 “gtask: use g_strconcat() in g_task_return() only if needed” to glib-2-72
+ - !2691 Backport !2661 “win32appinfo: change log level from warning to debug” to glib-2-72
+
+* Translation updates:
+ - Croatian
+ - Danish
+ - English (United Kingdom)
+ - French
+ - Galician
+ - German
+ - Nepali
+ - Portuguese (Brazil)
+
+
 Overview of changes in GLib 2.72.1
 ==================================
 

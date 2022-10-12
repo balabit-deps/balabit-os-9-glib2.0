@@ -1,3 +1,11 @@
+glib2.0 (2.72.4-0ubuntu1) jammy; urgency=medium
+
+  * New upstream release (LP: #1980408)
+  * Update testfilemonitor-Skip-if-we-are-avoiding-flaky-tests.patch
+    for new testfilemonitor test.
+
+ -- Jeremy Bicha <jbicha@ubuntu.com>  Wed, 12 Oct 2022 14:59:04 -0400
+
 glib2.0 (2.72.1-1) unstable; urgency=medium
 
   [ Jeremy Bicha ]
