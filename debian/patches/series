@@ -16,3 +16,4 @@ debian/Skip-memory-monitor-dbus-test-if-not-specifically-request.patch
 debian/Add-extra-debug-to-memory-monitor-dbus-test.patch
 debian/tests-Skip-debugcontroller-test.patch
 debian/gdesktopappinfo-Recognize-gnome-console-as-a-terminal-app.patch
+0001-gio-Make-portal-support-aware-of-snaps.patch

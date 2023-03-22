@@ -1,3 +1,10 @@
+glib2.0 (2.72.4-0ubuntu2) jammy; urgency=medium
+
+  * d/p/0001-gio-Make-portal-support-aware-of-snaps.patch:
+    - Make portal support aware of snaps (LP: #1998267)
+
+ -- Robert Ancell <robert.ancell@canonical.com>  Wed, 22 Mar 2023 15:52:13 +1300
+
 glib2.0 (2.72.4-0ubuntu1) jammy; urgency=medium
 
   * New upstream release (LP: #1980408)
