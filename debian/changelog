@@ -1,3 +1,13 @@
+glib2.0 (2.72.4-0ubuntu2.2) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: multiple GVariant security issues
+    - debian/patches/gvariant-security-*.patch: backported upstream fixes
+      for GVariant normalization issues.
+    - CVE-2023-24593, CVE-2023-29499, CVE-2023-25180, CVE-2023-32611,
+      CVE-2023-32636, CVE-2023-32643, CVE-2023-32665
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 08 Jun 2023 10:15:59 -0400
+
 glib2.0 (2.72.4-0ubuntu2) jammy; urgency=medium
 
   * d/p/0001-gio-Make-portal-support-aware-of-snaps.patch:
