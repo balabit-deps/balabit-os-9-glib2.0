@@ -1,3 +1,14 @@
+glib2.0 (2.72.4-0ubuntu2.3) jammy-security; urgency=medium
+
+  [ Marco Trevisan (Treviño) ]
+  * debian/patches: Backport patches to handle CVE-2024-34397
+
+  [ Marc Deslauriers ]
+  * debian/patches/gdbusconnection-regression.patch: fix ibus regression.
+  * debian/control*: added Breaks for gnome-shell without regression fix.
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 08 May 2024 13:22:46 -0400
+
 glib2.0 (2.72.4-0ubuntu2.2) jammy-security; urgency=medium
 
   * SECURITY UPDATE: multiple GVariant security issues
