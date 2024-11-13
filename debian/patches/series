@@ -57,3 +57,4 @@ tests-Add-a-test-for-signal-filtering-by-well-known-name.patch
 tests-Ensure-that-unsubscribing-with-GetNameOwner-in-flig.patch
 gdbus-proxy-test-Wait-before-asserting-name-owner-has-gon.patch
 gdbusconnection-regression.patch
+CVE-2024-52533.patch

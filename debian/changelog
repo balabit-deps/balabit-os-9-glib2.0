@@ -1,3 +1,12 @@
+glib2.0 (2.72.4-0ubuntu2.4) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Buffer overflow
+    - debian/patches/CVE-2024-52533.patch: fix a single byte buffer
+      overflow in connect messages in gio/gsocks4aproxy.c.
+    - CVE-2024-52533
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Wed, 13 Nov 2024 14:54:48 -0300
+
 glib2.0 (2.72.4-0ubuntu2.3) jammy-security; urgency=medium
 
   [ Marco Trevisan (Treviño) ]
