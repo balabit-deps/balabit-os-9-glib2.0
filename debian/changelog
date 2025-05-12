@@ -1,3 +1,14 @@
+glib2.0 (2.72.4-0ubuntu2.5) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Integer Overflow
+    - debian/patches/CVE-2025-4373-1.patch: carefully handle gssize
+      in glib/gstring.c.
+    - debian/patches/CVE-2025-4373-2.patch: make len_unsigned
+      unsigned in glib/gstring.c
+    - CVE-2025-4373
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Mon, 12 May 2025 05:34:39 -0300
+
 glib2.0 (2.72.4-0ubuntu2.4) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Buffer overflow

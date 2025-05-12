@@ -58,3 +58,5 @@ tests-Ensure-that-unsubscribing-with-GetNameOwner-in-flig.patch
 gdbus-proxy-test-Wait-before-asserting-name-owner-has-gon.patch
 gdbusconnection-regression.patch
 CVE-2024-52533.patch
+CVE-2025-4373-1.patch
+CVE-2025-4373-2.patch
