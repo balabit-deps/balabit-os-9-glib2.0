@@ -1,0 +1,166 @@
+From: Alex Henrie <alexhenrie24@gmail.com>
+Date: Sun, 3 Dec 2023 22:52:09 -0700
+Subject: xdgmime: Handle realloc moving the buffer in
+ _xdg_mime_(cache_)mime_type_subclass
+
+Origin: https://gitlab.freedesktop.org/xdg/xdgmime/-/merge_requests/32
+Bug: https://gitlab.gnome.org/GNOME/glib/-/issues/2833
+Bug: https://gitlab.gnome.org/GNOME/glib/-/issues/3191
+Bug-Ubuntu: https://launchpad.net/bugs/2097496
+---
+ gio/xdgmime/xdgmime.c      | 26 ++++++++++++++------------
+ gio/xdgmime/xdgmime.h      |  2 +-
+ gio/xdgmime/xdgmimecache.c | 25 ++++++++++++++-----------
+ gio/xdgmime/xdgmimecache.h |  2 +-
+ 4 files changed, 30 insertions(+), 25 deletions(-)
+
+diff --git a/gio/xdgmime/xdgmime.c b/gio/xdgmime/xdgmime.c
+index 31f352c..442daaa 100644
+--- a/gio/xdgmime/xdgmime.c
++++ b/gio/xdgmime/xdgmime.c
+@@ -836,12 +836,12 @@ xdg_mime_is_super_type (const char *mime)
+ int
+ _xdg_mime_mime_type_subclass (const char *mime,
+ 			      const char *base,
+-			      const char **seen)
++			      const char ***seen)
+ {
+   const char *umime, *ubase, *parent;
+-  const char **parents;
++  const char **parents, **first_seen = NULL, **new_seen;
+ 
+-  int first_seen = 0, i, ret = 0;
++  int i, ret = 0;
+ 
+   if (_caches)
+     return _xdg_mime_cache_mime_type_subclass (mime, base, NULL);
+@@ -870,8 +870,8 @@ _xdg_mime_mime_type_subclass (const char *mime,
+ 
+   if (!seen)
+     {
+-      seen = calloc (1, sizeof (char *));
+-      first_seen = 1;
++      first_seen = calloc (1, sizeof (char *));
++      seen = &first_seen;
+     }
+ 
+   parents = _xdg_mime_parent_list_lookup (parent_list, umime);
+@@ -880,12 +880,15 @@ _xdg_mime_mime_type_subclass (const char *mime,
+       parent = *parents;
+ 
+       /* Detect and avoid buggy circular relationships */
+-      for (i = 0; seen[i] != NULL; i++)
+-        if (parent == seen[i])
++      for (i = 0; (*seen)[i] != NULL; i++)
++        if (parent == (*seen)[i])
+           goto next_parent;
+-      seen = realloc (seen, (i + 2) * sizeof (char *));
+-      seen[i] = parent;
+-      seen[i + 1] = NULL;
++      new_seen = realloc (*seen, (i + 2) * sizeof (char *));
++      if (!new_seen)
++        goto done;
++      new_seen[i] = parent;
++      new_seen[i + 1] = NULL;
++      *seen = new_seen;
+ 
+       if (_xdg_mime_mime_type_subclass (parent, ubase, seen))
+         {
+@@ -897,8 +900,7 @@ _xdg_mime_mime_type_subclass (const char *mime,
+     }
+ 
+ done:
+-  if (first_seen)
+-    free (seen);
++  free (first_seen);
+   return ret;
+ }
+ 
+diff --git a/gio/xdgmime/xdgmime.h b/gio/xdgmime/xdgmime.h
+index bbae1be..dc47339 100644
+--- a/gio/xdgmime/xdgmime.h
++++ b/gio/xdgmime/xdgmime.h
+@@ -126,7 +126,7 @@ int          _xdg_mime_mime_type_equal             (const char *mime_a,
+ 						    const char *mime_b);
+ int          _xdg_mime_mime_type_subclass          (const char *mime,
+ 						    const char *base,
+-						    const char **seen);
++						    const char ***seen);
+ const char  *_xdg_mime_unalias_mime_type           (const char *mime);
+ 
+ 
+diff --git a/gio/xdgmime/xdgmimecache.c b/gio/xdgmime/xdgmimecache.c
+index 6b19850..4f3458e 100644
+--- a/gio/xdgmime/xdgmimecache.c
++++ b/gio/xdgmime/xdgmimecache.c
+@@ -902,12 +902,13 @@ is_super_type (const char *mime)
+ int
+ _xdg_mime_cache_mime_type_subclass (const char *mime,
+ 				    const char *base,
+-				    const char **seen)
++				    const char ***seen)
+ {
+   const char *umime, *ubase, *parent;
++  const char **first_seen = NULL, **new_seen;
+ 
+   xdg_uint32_t j;
+-  int i, k, min, max, med, cmp, first_seen = 0, ret = 0;
++  int i, k, min, max, med, cmp, ret = 0;
+ 
+   umime = _xdg_mime_cache_unalias_mime_type (mime);
+   ubase = _xdg_mime_cache_unalias_mime_type (base);
+@@ -936,8 +937,8 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
+ 
+   if (!seen)
+     {
+-      seen = calloc (1, sizeof (char *));
+-      first_seen = 1;
++      first_seen = calloc (1, sizeof (char *));
++      seen = &first_seen;
+     }
+ 
+   for (i = 0; _caches[i]; i++)
+@@ -976,12 +977,15 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
+ 		  parent = cache->buffer + parent_offset;
+ 
+ 		  /* Detect and avoid buggy circular relationships */
+-		  for (k = 0; seen[k] != NULL; k++)
+-		    if (parent == seen[k])
++		  for (k = 0; (*seen)[k] != NULL; k++)
++		    if (parent == (*seen)[k])
+ 		      goto next_parent;
+-		  seen = realloc (seen, (k + 2) * sizeof (char *));
+-		  seen[k] = parent;
+-		  seen[k + 1] = NULL;
++		  new_seen = realloc (*seen, (k + 2) * sizeof (char *));
++		  if (!new_seen)
++		    goto done;
++		  new_seen[k] = parent;
++		  new_seen[k + 1] = NULL;
++		  *seen = new_seen;
+ 
+ 		  if (_xdg_mime_cache_mime_type_subclass (parent, ubase, seen))
+ 		    {
+@@ -998,8 +1002,7 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
+     }
+ 
+ done:
+-  if (first_seen)
+-    free (seen);
++  free (first_seen);
+   return ret;
+ }
+ 
+diff --git a/gio/xdgmime/xdgmimecache.h b/gio/xdgmime/xdgmimecache.h
+index 0ac0b05..315d863 100644
+--- a/gio/xdgmime/xdgmimecache.h
++++ b/gio/xdgmime/xdgmimecache.h
+@@ -71,7 +71,7 @@ int          _xdg_mime_cache_media_type_equal             (const char *mime_a,
+ 							   const char *mime_b);
+ int          _xdg_mime_cache_mime_type_subclass           (const char *mime_a,
+ 							   const char *mime_b,
+-							   const char **seen);
++							   const char ***seen);
+ char       **_xdg_mime_cache_list_mime_parents		  (const char *mime);
+ const char  *_xdg_mime_cache_unalias_mime_type            (const char *mime);
+ int          _xdg_mime_cache_get_max_buffer_extents       (void);

@@ -1,0 +1,223 @@
+From: Alex Henrie <alexhenrie24@gmail.com>
+Date: Sun, 19 Nov 2023 15:54:27 -0700
+Subject: xdgmime: Handle buggy type definitions with circular inheritance
+
+This fixes a stack overflow reported by a user who had both the
+definition of text/javascript from shared-mime-info 2.3 and the
+definition of text/javascript from shared-mime-info 2.4 installed at the
+same time. In 2.3, text/javascript is a subtype of
+application/ecmascript, but in 2.4 application/ecmascript is a subtype
+of text/javascript. Having both at the same time resulted in circular
+inheritance.
+
+The new logic keeps a list of all parents that have already been
+checked, which is more comprehensive than the old workaround that was
+implemented in commit 38869ece2 ("xdgmime: Prevent infinite loops from
+badly-formed MIME registrations").
+
+https://bugs.archlinux.org/task/80279
+
+Origin: https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3718
+Bug: https://gitlab.gnome.org/GNOME/glib/-/issues/2833
+Bug-Ubuntu: https://launchpad.net/bugs/2097496
+---
+ gio/xdgmime/xdgmime.c      | 43 ++++++++++++++++++++++++++++++++++--------
+ gio/xdgmime/xdgmime.h      |  3 ++-
+ gio/xdgmime/xdgmimecache.c | 47 ++++++++++++++++++++++++++++++++++------------
+ gio/xdgmime/xdgmimecache.h |  3 ++-
+ 4 files changed, 74 insertions(+), 22 deletions(-)
+
+diff --git a/gio/xdgmime/xdgmime.c b/gio/xdgmime/xdgmime.c
+index c3c1162..31f352c 100644
+--- a/gio/xdgmime/xdgmime.c
++++ b/gio/xdgmime/xdgmime.c
+@@ -835,13 +835,16 @@ xdg_mime_is_super_type (const char *mime)
+ 
+ int
+ _xdg_mime_mime_type_subclass (const char *mime,
+-			      const char *base)
++			      const char *base,
++			      const char **seen)
+ {
+-  const char *umime, *ubase;
++  const char *umime, *ubase, *parent;
+   const char **parents;
+ 
++  int first_seen = 0, i, ret = 0;
++
+   if (_caches)
+-    return _xdg_mime_cache_mime_type_subclass (mime, base);
++    return _xdg_mime_cache_mime_type_subclass (mime, base, NULL);
+ 
+   umime = _xdg_mime_unalias_mime_type (mime);
+   ubase = _xdg_mime_unalias_mime_type (base);
+@@ -864,15 +867,39 @@ _xdg_mime_mime_type_subclass (const char *mime,
+   if (strcmp (ubase, "application/octet-stream") == 0 &&
+       strncmp (umime, "inode/", 6) != 0)
+     return 1;
+-  
++
++  if (!seen)
++    {
++      seen = calloc (1, sizeof (char *));
++      first_seen = 1;
++    }
++
+   parents = _xdg_mime_parent_list_lookup (parent_list, umime);
+   for (; parents && *parents; parents++)
+     {
+-      if (_xdg_mime_mime_type_subclass (*parents, ubase))
+-	return 1;
++      parent = *parents;
++
++      /* Detect and avoid buggy circular relationships */
++      for (i = 0; seen[i] != NULL; i++)
++        if (parent == seen[i])
++          goto next_parent;
++      seen = realloc (seen, (i + 2) * sizeof (char *));
++      seen[i] = parent;
++      seen[i + 1] = NULL;
++
++      if (_xdg_mime_mime_type_subclass (parent, ubase, seen))
++        {
++          ret = 1;
++          goto done;
++        }
++
++    next_parent:
+     }
+ 
+-  return 0;
++done:
++  if (first_seen)
++    free (seen);
++  return ret;
+ }
+ 
+ int
+@@ -881,7 +908,7 @@ xdg_mime_mime_type_subclass (const char *mime,
+ {
+   xdg_mime_init ();
+ 
+-  return _xdg_mime_mime_type_subclass (mime, base);
++  return _xdg_mime_mime_type_subclass (mime, base, NULL);
+ }
+ 
+ char **
+diff --git a/gio/xdgmime/xdgmime.h b/gio/xdgmime/xdgmime.h
+index c590996..bbae1be 100644
+--- a/gio/xdgmime/xdgmime.h
++++ b/gio/xdgmime/xdgmime.h
+@@ -125,7 +125,8 @@ void xdg_mime_set_dirs (const char * const *dirs);
+ int          _xdg_mime_mime_type_equal             (const char *mime_a,
+ 						    const char *mime_b);
+ int          _xdg_mime_mime_type_subclass          (const char *mime,
+-						    const char *base);
++						    const char *base,
++						    const char **seen);
+ const char  *_xdg_mime_unalias_mime_type           (const char *mime);
+ 
+ 
+diff --git a/gio/xdgmime/xdgmimecache.c b/gio/xdgmime/xdgmimecache.c
+index 234e4b4..6b19850 100644
+--- a/gio/xdgmime/xdgmimecache.c
++++ b/gio/xdgmime/xdgmimecache.c
+@@ -751,8 +751,8 @@ cache_get_mime_type_for_data (const void *data,
+       /* Pick glob-result R where mime_type inherits from R */
+       for (n = 0; n < n_mime_types; n++)
+         {
+-          if (mime_types[n] && _xdg_mime_cache_mime_type_subclass(mime_types[n], mime_type))
+-              return mime_types[n];
++          if (mime_types[n] && _xdg_mime_cache_mime_type_subclass (mime_types[n], mime_type, NULL))
++            return mime_types[n];
+         }
+       if (n == 0)
+         {
+@@ -901,13 +901,14 @@ is_super_type (const char *mime)
+ 
+ int
+ _xdg_mime_cache_mime_type_subclass (const char *mime,
+-				    const char *base)
++				    const char *base,
++				    const char **seen)
+ {
+-  const char *umime, *ubase;
++  const char *umime, *ubase, *parent;
+ 
+   xdg_uint32_t j;
+-  int i, min, max, med, cmp;
+-  
++  int i, k, min, max, med, cmp, first_seen = 0, ret = 0;
++
+   umime = _xdg_mime_cache_unalias_mime_type (mime);
+   ubase = _xdg_mime_cache_unalias_mime_type (base);
+ 
+@@ -932,7 +933,13 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
+   if (strcmp (ubase, "application/octet-stream") == 0 &&
+       strncmp (umime, "inode/", 6) != 0)
+     return 1;
+- 
++
++  if (!seen)
++    {
++      seen = calloc (1, sizeof (char *));
++      first_seen = 1;
++    }
++
+   for (i = 0; _caches[i]; i++)
+     {
+       XdgMimeCache *cache = _caches[i];
+@@ -966,10 +973,23 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
+ 	      for (j = 0; j < n_parents; j++)
+ 		{
+ 		  parent_offset = GET_UINT32 (cache->buffer, offset + 4 + 4 * j);
+-		  if (strcmp (cache->buffer + parent_offset, mime) != 0 &&
+-		      strcmp (cache->buffer + parent_offset, umime) != 0 &&
+-		      _xdg_mime_cache_mime_type_subclass (cache->buffer + parent_offset, ubase))
+-		    return 1;
++		  parent = cache->buffer + parent_offset;
++
++		  /* Detect and avoid buggy circular relationships */
++		  for (k = 0; seen[k] != NULL; k++)
++		    if (parent == seen[k])
++		      goto next_parent;
++		  seen = realloc (seen, (k + 2) * sizeof (char *));
++		  seen[k] = parent;
++		  seen[k + 1] = NULL;
++
++		  if (_xdg_mime_cache_mime_type_subclass (parent, ubase, seen))
++		    {
++		      ret = 1;
++		      goto done;
++		    }
++
++	        next_parent:
+ 		}
+ 
+ 	      break;
+@@ -977,7 +997,10 @@ _xdg_mime_cache_mime_type_subclass (const char *mime,
+ 	}
+     }
+ 
+-  return 0;
++done:
++  if (first_seen)
++    free (seen);
++  return ret;
+ }
+ 
+ const char *
+diff --git a/gio/xdgmime/xdgmimecache.h b/gio/xdgmime/xdgmimecache.h
+index df25b2a..0ac0b05 100644
+--- a/gio/xdgmime/xdgmimecache.h
++++ b/gio/xdgmime/xdgmimecache.h
+@@ -70,7 +70,8 @@ int          _xdg_mime_cache_mime_type_equal              (const char *mime_a,
+ int          _xdg_mime_cache_media_type_equal             (const char *mime_a,
+ 							   const char *mime_b);
+ int          _xdg_mime_cache_mime_type_subclass           (const char *mime_a,
+-							   const char *mime_b);
++							   const char *mime_b,
++							   const char **seen);
+ char       **_xdg_mime_cache_list_mime_parents		  (const char *mime);
+ const char  *_xdg_mime_cache_unalias_mime_type            (const char *mime);
+ int          _xdg_mime_cache_get_max_buffer_extents       (void);

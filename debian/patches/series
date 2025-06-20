@@ -60,3 +60,5 @@ gdbusconnection-regression.patch
 CVE-2024-52533.patch
 CVE-2025-4373-1.patch
 CVE-2025-4373-2.patch
+xdgmime-Handle-buggy-type-definitions-with-circular-inher.patch
+xdgmime-Handle-realloc-moving-the-buffer-in-_xdg_mime_-ca.patch
