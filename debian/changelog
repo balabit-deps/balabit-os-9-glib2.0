@@ -1,3 +1,46 @@
+glib2.0 (2.72.4-0ubuntu2.7) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: overflow via long invalid ISO 8601 timestamp
+    - debian/patches/CVE-2025-3360-1.patch: fix integer overflow when
+      parsing very long ISO8601 inputs in glib/gdatetime.c.
+    - debian/patches/CVE-2025-3360-2.patch: fix potential integer overflow
+      in timezone offset handling in glib/gdatetime.c.
+    - debian/patches/CVE-2025-3360-3.patch: track timezone length as an
+      unsigned size_t in glib/gdatetime.c.
+    - debian/patches/CVE-2025-3360-4.patch: factor out some string pointer
+      arithmetic in glib/gdatetime.c.
+    - debian/patches/CVE-2025-3360-5.patch: factor out an undersized
+      variable in glib/gdatetime.c.
+    - debian/patches/CVE-2025-3360-6.patch: add some missing GDateTime
+      ISO8601 parsing tests in glib/tests/gdatetime.c.
+    - CVE-2025-3360
+  * SECURITY UPDATE: GString overflow
+    - debian/patches/CVE-2025-6052.patch: fix overflow check when expanding
+      the string in glib/gstring.c.
+    - CVE-2025-6052
+  * SECURITY UPDATE: integer overflow in temp file creation
+    - debian/patches/CVE-2025-7039.patch: fix computation of temporary file
+      name in glib/gfileutils.c.
+    - CVE-2025-7039
+  * SECURITY UPDATE: heap overflow in g_escape_uri_string()
+    - debian/patches/CVE-2025-13601.patch: add overflow check in
+      glib/gconvert.c.
+    - CVE-2025-13601
+  * SECURITY UPDATE: buffer underflow through glib/gvariant
+    - debian/patches/CVE-2025-14087-1.patch: fix potential integer overflow
+      parsing (byte)strings in glib/gvariant-parser.c.
+    - debian/patches/CVE-2025-14087-2.patch: use size_t to count numbers of
+      child elements in glib/gvariant-parser.c.
+    - debian/patches/CVE-2025-14087-3.patch: convert error handling code to
+      use size_t in glib/gvariant-parser.c.
+    - CVE-2025-14087
+  * SECURITY UPDATE: integer overflow in gfileattribute
+    - debian/patches/gfileattribute-overflow.patch: add overflow check in
+      gio/gfileattribute.c.
+    - No CVE number
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 10 Dec 2025 11:09:12 -0500
+
 glib2.0 (2.72.4-0ubuntu2.6) jammy; urgency=medium
 
   * Fix crash due to infinite recursion in MIME subclassing (LP: #2097496)
