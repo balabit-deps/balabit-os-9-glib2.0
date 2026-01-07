@@ -1,3 +1,9 @@
+glib2.0 (2.72.4-0ubuntu2.7bb1) jammy; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Wed, 07 Jan 2026 10:36:01 +0100
+
 glib2.0 (2.72.4-0ubuntu2.7) jammy-security; urgency=medium
 
   * SECURITY UPDATE: overflow via long invalid ISO 8601 timestamp
