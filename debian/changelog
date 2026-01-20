@@ -1,3 +1,13 @@
+glib2.0 (2.72.4-0ubuntu2.8) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Integer overflow in g_buffered_input_stream_peek()
+    - debian/patches/CVE-2026-0988.patch: fix a potential integer overflow
+      in peek() in gio/gbufferedinputstream.c,
+      gio/tests/buffered-input-stream.c.
+    - CVE-2026-0988
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 20 Jan 2026 08:55:03 -0500
+
 glib2.0 (2.72.4-0ubuntu2.7) jammy-security; urgency=medium
 
   * SECURITY UPDATE: overflow via long invalid ISO 8601 timestamp
