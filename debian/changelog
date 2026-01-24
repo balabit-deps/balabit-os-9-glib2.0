@@ -1,3 +1,9 @@
+glib2.0 (2.72.4-0ubuntu2.8bb1) jammy; urgency=medium
+
+  * Balabit patched version
+
+ -- Balabit Platform Team <devnull@dev.null>  Sat, 24 Jan 2026 10:21:55 +0100
+
 glib2.0 (2.72.4-0ubuntu2.8) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Integer overflow in g_buffered_input_stream_peek()
