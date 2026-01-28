@@ -1,3 +1,28 @@
+glib2.0 (2.72.4-0ubuntu2.9) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: integer overflow in Base64 encoding
+    - debian/patches/CVE-2026-1484-1.patch: use gsize to prevent potential
+      overflow in glib/gbase64.c.
+    - debian/patches/CVE-2026-1484-2.patch: ensure that the out value is
+      within allocated size in glib/gbase64.c.
+    - CVE-2026-1484
+  * SECURITY UPDATE: buffer underflow via header length
+    - debian/patches/CVE-2026-1485.patch: do not overflow if header is
+      longer than MAXINT in gio/gcontenttype.c.
+    - CVE-2026-1485
+  * SECURITY UPDATE: integer overflow via Unicode case conversion
+    - debian/patches/CVE-2026-1489-1.patch: use size_t for output_marks
+      length in glib/guniprop.c.
+    - debian/patches/CVE-2026-1489-2.patch: do not convert size_t to gint
+      in glib/guniprop.c.
+    - debian/patches/CVE-2026-1489-3.patch: ensure we do not overflow size
+      in glib/guniprop.c.
+    - debian/patches/CVE-2026-1489-4.patch: add test debug information when
+      parsing input files in glib/tests/unicode.c.
+    - CVE-2026-1489
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 28 Jan 2026 12:57:54 -0500
+
 glib2.0 (2.72.4-0ubuntu2.8) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Integer overflow in g_buffered_input_stream_peek()
